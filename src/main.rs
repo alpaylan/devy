@@ -138,7 +138,23 @@ impl MarkDownParser {
                 }
                 RichText::Code(code)
             }
-            _ => unreachable!(),
+            Rule::link => {
+                let mut inner = pair.into_inner();
+                let text = MarkDownParser::parse_rich_text(inner.next().unwrap().into_inner().next().unwrap());
+                let url = inner.next().unwrap().as_str();
+                let url = url[1..url.len()-1].to_string();
+                RichText::Link(vec![text], url)
+            },
+            Rule::image => {
+                let mut inner = pair.into_inner();
+                let text = MarkDownParser::parse_rich_text(inner.next().unwrap().into_inner().next().unwrap());
+                let url = inner.next().unwrap().as_str();
+                let url = url[1..url.len()-1].to_string();
+                RichText::Image(vec![text], url)
+            },
+            other => {
+                panic!("Unexpected rule: {:?}", other);
+            }
         }
     }
 }
@@ -164,7 +180,12 @@ impl Markdown {
                     }
                     markdown.push(Markdown::Paragraph(Paragraph(paragraph)));
                 }
-                _ => unreachable!(),
+                Rule::empty_line => {}
+                Rule::EOI => {}
+                
+                other => {
+                    panic!("Unexpected rule: {:?}", other);
+                }
             }
         }
 
@@ -216,13 +237,19 @@ This is a ***bitalic*** paragraph.
 
 This paragraph has some `code`.
 
-This is a [link](https://www.google.com).
+This is a [link](https://example.com).
 
-This is an ![image](https://www.google.com).
+This is an ![image](https://example.com/image.jpg).
+
+This is a [**bold link**](https://example.com).
+
 
 "#;
 
     let doc = Markdown::from_str(md);
     println!("{}", doc.to_html());
+
+    let link = "[link]";
+    let pairs = MarkDownParser::parse(Rule::link_text, link).unwrap_or_else(|e| panic!("{}", e));
 
 }

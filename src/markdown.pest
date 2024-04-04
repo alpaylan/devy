@@ -8,14 +8,24 @@ paragraph        =  { paragraph_text ~ paragraph_ending }
 paragraph_ending = _{ "  \n" | "\n\n" }
 paragraph_text   = _{ !empty_line ~ !paragraph_ending ~ rich_text+ }
 
-rich_text =  _{ bold | italic | normal | code }
-code      =  { PUSH("`") ~  (!("`" | paragraph_ending) ~ (bold | italic | normal)+) ~ POP }
-bold      =  { PUSH("**") ~ (!("**" | paragraph_ending) ~ (code | italic | normal)+) ~ POP }
-italic    =  { PUSH("*") ~  (!("*" | paragraph_ending) ~ (code | bold | normal)+) ~ POP }
-normal    =  { (!(paragraph_ending | "`" | "**" | "*") ~ ANY)+ }
+rich_text = _{ image | link | code | bold | italic | normal }
+
+image = { image_text ~ image_url }
+image_text = { "![" ~ (!("]" | paragraph_ending) ~ (link | code | bold | italic | normal))+ ~ "]" }
+image_url  = { "(" ~ (!(")" | paragraph_ending) ~ ANY)+ ~ ")" }
+
+
+link = { link_text ~ link_url }
+link_text = { "[" ~ (!("]" | paragraph_ending) ~ (image |code | bold | italic | normal))+ ~ "]" }
+link_url  = { "(" ~ (!(")" | paragraph_ending) ~ ANY)+ ~ ")" }
+
+code   = { PUSH("`") ~ (!("`" | paragraph_ending) ~ (link | bold | italic | normal))+ ~ POP }
+bold   = { PUSH("**") ~ (!("**" | paragraph_ending) ~ (link | code | italic | normal))+ ~ POP }
+italic = { PUSH("*") ~ (!("*" | paragraph_ending) ~ (link | code | bold | normal))+ ~ POP }
+normal = { (!(paragraph_ending | "`" | "**" | "*" | "[" | "]" | "![") ~ ANY)+ }
 
 empty_line = _{ "\n" }
 
 // Document
 
-document = _{ (heading | paragraph | empty_line)+ }
+document = _{ SOI ~ (heading | paragraph | empty_line)+ ~ EOI }
