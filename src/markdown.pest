@@ -1,0 +1,21 @@
+// Headings
+
+heading       = !{ heading_level ~ heading_title ~ "\n" }
+heading_level = @{ "######" | "#####" | "####" | "###" | "##" | "#" }
+heading_title = @{ (!"\n" ~ ANY)+ }
+
+paragraph        =  { paragraph_text ~ paragraph_ending }
+paragraph_ending = _{ "  \n" | "\n\n" }
+paragraph_text   = _{ !empty_line ~ !paragraph_ending ~ rich_text+ }
+
+rich_text =  _{ bold | italic | normal | code }
+code      =  { PUSH("`") ~  (!("`" | paragraph_ending) ~ (bold | italic | normal)+) ~ POP }
+bold      =  { PUSH("**") ~ (!("**" | paragraph_ending) ~ (code | italic | normal)+) ~ POP }
+italic    =  { PUSH("*") ~  (!("*" | paragraph_ending) ~ (code | bold | normal)+) ~ POP }
+normal    =  { (!(paragraph_ending | "`" | "**" | "*") ~ ANY)+ }
+
+empty_line = _{ "\n" }
+
+// Document
+
+document = _{ (heading | paragraph | empty_line)+ }
