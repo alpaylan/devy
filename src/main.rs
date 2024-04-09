@@ -246,7 +246,7 @@ fn main() {
                                 children: Dom(vec![DomElement::Text(code.clone())]),
                             });
 
-                            if kinds.contains(&"echo".to_string()) {
+                            if kinds.contains(&"show".to_string()) {
                                 let lang = ("class".to_string(), format!("language-{}", kinds.first().unwrap().clone()));
                                 let name = ("name".to_string(), identifier.clone());
                                 dom.push(DomElement::Element {
