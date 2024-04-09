@@ -1,5 +1,7 @@
 # Devy: Interactive Blog Engine
 
+![Devy-Logo](devy-logo.png){ width=50% center }
+
 There are many blogs on the internet, but the best ones I encounter are all interactive. They have code snippets that you can run, modify, and see the results right there. They have quizzes, exercises, and interactive diagrams. They are not just a wall of text, they are a playground where you can learn by doing.
 
 I tried to write my articles interactively, but it was just too much effort per article, so I decided to design a simple declarative language defining the components and
@@ -7,6 +9,10 @@ their interactions with each other. The result is DCL(Declarative Component Lang
 
 Devy is implemented as a Pandoc filter using `pandoc_ast` crate. It reads a markdown file, detects DCL snippets written as code blocks, generates the necessary
 Javascript code for the interactions and renders the article as a static HTML file.
+
+Below, you can see a Devy in action!
+
+![Devy-Example](devy-example.gif){ width=70% center }
 
 ## DCL
 
