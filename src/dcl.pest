@@ -2,14 +2,15 @@
 
 
 id = { ASCII_ALPHANUMERIC+ }
-type = { "text-input" | "text-area" | "paragraph" }
+type = { "text-input" | "text-area" | "paragraph" | "radio" }
 
 
 body = { ((!"\n") ~ ANY)+ }
 function = { params ~ "=>" ~ body }
+options = { id ~ ("," ~ id)+ }  
 constant = { ((!"\n") ~ ANY)+ }
-params = { (id ~ ("," ~ id)*)? }
-value = _{ function | constant }
+params = { (id ~ ("," ~ id)*)? }  
+value = _{ function | options | constant }
 
 stmt = { id ~ ":" ~ type ~ ":=" ~ value ~ "\n"? }
 

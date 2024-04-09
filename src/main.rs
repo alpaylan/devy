@@ -76,6 +76,66 @@ impl DeclarativeComponentLanguage {
                         children: Dom(vec![]),
                     });
                 }
+                Value::Options { values } => {
+                    // Create a hidden input variable to store the selected value
+                    dom.push(DomElement::Element {
+                        tag: "input".to_string(),
+                        attributes: vec![
+                            ("type".to_string(), "hidden".to_string()),
+                            ("id".to_string(), format!("{}", statement.variable)),
+                        ],
+                        children: Dom(vec![]),
+                    });
+
+                    // Create radio buttons for each value
+                    for value in values {
+                        let event_listener = format!(
+                            r#"
+    document.getElementById("{}").addEventListener('input', function(event) {{
+    document.getElementById("{}").value = "{}";
+    document.getElementById("{}").dispatchEvent(new Event('input'));
+}});
+"#,
+                            format!("{}_{}", statement.variable, value),
+                            statement.variable,
+                            value,
+                            statement.variable,
+                        );
+                        dom.push(DomElement::Element {
+                            tag: "input".to_string(),
+                            attributes: vec![
+                                ("type".to_string(), "radio".to_string()),
+                                ("name".to_string(), statement.variable.clone()),
+                                ("value".to_string(), value.clone()),
+                                (
+                                    "id".to_string(),
+                                    format!("{}_{}", statement.variable, value),
+                                ),
+                            ],
+                            children: Dom(vec![]),
+                        });
+
+                        // Register event listener
+                        dom.push(DomElement::Element {
+                            tag: "script".to_string(),
+                            attributes: vec![],
+                            children: Dom(vec![DomElement::Text(event_listener)]),
+                        });
+
+                        // Create a label for the radio button
+
+                        dom.push(DomElement::Element {
+                            tag: "label".to_string(),
+                            attributes: vec![(
+                                "for".to_string(),
+                                format!("{}_{}", statement.variable, value),
+                            )],
+                            children: Dom(vec![DomElement::Text(value.clone())]),
+                        });
+                    }
+
+                    // Create a hidden input variable to store the selected value
+                }
             };
         }
 
@@ -95,12 +155,14 @@ pub enum ComponentKind {
     TextInput,
     TextArea,
     Paragraph,
+    Radio,
 }
 
 impl ComponentKind {
     pub fn attributes(&self) -> Vec<(String, String)> {
         match self {
             ComponentKind::TextInput => vec![("type".to_string(), "text".to_string())],
+            ComponentKind::Radio => vec![("type".to_string(), "radio".to_string())],
             ComponentKind::TextArea | ComponentKind::Paragraph => vec![],
         }
     }
@@ -109,6 +171,7 @@ impl ComponentKind {
         match self {
             ComponentKind::TextInput | ComponentKind::TextArea => "value".to_string(),
             ComponentKind::Paragraph => "innerHTML".to_string(),
+            ComponentKind::Radio => "checked".to_string(),
         }
     }
 
@@ -117,6 +180,7 @@ impl ComponentKind {
             ComponentKind::TextInput => "input".to_string(),
             ComponentKind::TextArea => "textarea".to_string(),
             ComponentKind::Paragraph => "p".to_string(),
+            ComponentKind::Radio => "input".to_string(),
         }
     }
 }
@@ -168,6 +232,9 @@ pub enum Value {
     Const {
         value: String,
     },
+    Options {
+        values: Vec<String>,
+    },
 }
 
 fn parse_dcl(s: &str) -> DeclarativeComponentLanguage {
@@ -184,6 +251,7 @@ fn parse_dcl(s: &str) -> DeclarativeComponentLanguage {
                     "text-input" => ComponentKind::TextInput,
                     "text-area" => ComponentKind::TextArea,
                     "paragraph" => ComponentKind::Paragraph,
+                    "radio" => ComponentKind::Radio,
                     _ => panic!(),
                 };
                 let pair = pairs.next().unwrap();
@@ -193,9 +261,7 @@ fn parse_dcl(s: &str) -> DeclarativeComponentLanguage {
                         Value::Const { value }
                     }
                     Rule::function => {
-                        println!("{:?}", pair);
                         let mut pairs = pair.into_inner();
-                        println!("{:?}", pairs);
                         let params = pairs.next().unwrap();
                         let variables = params
                             .as_str()
@@ -204,6 +270,11 @@ fn parse_dcl(s: &str) -> DeclarativeComponentLanguage {
                             .collect();
                         let body = pairs.next().unwrap().as_str().to_string();
                         Value::Fn { variables, body }
+                    }
+                    Rule::options => {
+                        let pairs = pair.into_inner();
+                        let values = pairs.map(|p| p.as_str().to_string()).collect();
+                        Value::Options { values }
                     }
                     other => panic!("{:?}", other),
                 };
@@ -247,7 +318,10 @@ fn main() {
                             });
 
                             if kinds.contains(&"show".to_string()) {
-                                let lang = ("class".to_string(), format!("language-{}", kinds.first().unwrap().clone()));
+                                let lang = (
+                                    "class".to_string(),
+                                    format!("language-{}", kinds.first().unwrap().clone()),
+                                );
                                 let name = ("name".to_string(), identifier.clone());
                                 dom.push(DomElement::Element {
                                     tag: "pre".to_string(),
@@ -256,13 +330,14 @@ fn main() {
                                         tag: "code".to_string(),
                                         attributes: vec![lang, name],
                                         children: Dom(vec![DomElement::Text(code.clone())]),
-                                    
                                     }]),
                                 });
                             }
 
-                            RawBlock(pandoc_ast::Format("HTML".to_string()), Dom(dom).to_raw_html())
-
+                            RawBlock(
+                                pandoc_ast::Format("HTML".to_string()),
+                                Dom(dom).to_raw_html(),
+                            )
                         } else if kinds.contains(&"dcl".to_string()) {
                             interpret_dcl(code)
                         } else {
