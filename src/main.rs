@@ -323,13 +323,14 @@ fn main() {
                                     format!("language-{}", kinds.first().unwrap().clone()),
                                 );
                                 let name = ("name".to_string(), identifier.clone());
+                                let code = code.replace("<", "&lt;").replace(">", "&gt;");
                                 dom.push(DomElement::Element {
                                     tag: "pre".to_string(),
                                     attributes: vec![],
                                     children: Dom(vec![DomElement::Element {
                                         tag: "code".to_string(),
                                         attributes: vec![lang, name],
-                                        children: Dom(vec![DomElement::Text(code.clone())]),
+                                        children: Dom(vec![DomElement::Text(code)]),
                                     }]),
                                 });
                             }
