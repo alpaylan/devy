@@ -237,9 +237,32 @@ fn main() {
             for block in &mut pandoc.blocks {
                 use pandoc_ast::Block::*;
                 *block = match block {
-                    CodeBlock((ref identifiers, ref kinds, ref kvs), ref code) => {
+                    CodeBlock((ref identifier, ref kinds, ref kvs), ref code) => {
                         if kinds.contains(&"script".to_string()) {
-                            raw_script(code)
+                            let mut dom = vec![];
+                            dom.push(DomElement::Element {
+                                tag: "script".to_string(),
+                                attributes: vec![],
+                                children: Dom(vec![DomElement::Text(code.clone())]),
+                            });
+
+                            if kinds.contains(&"echo".to_string()) {
+                                let lang = ("class".to_string(), format!("language-{}", kinds.first().unwrap().clone()));
+                                let name = ("name".to_string(), identifier.clone());
+                                dom.push(DomElement::Element {
+                                    tag: "pre".to_string(),
+                                    attributes: vec![],
+                                    children: Dom(vec![DomElement::Element {
+                                        tag: "code".to_string(),
+                                        attributes: vec![lang, name],
+                                        children: Dom(vec![DomElement::Text(code.clone())]),
+                                    
+                                    }]),
+                                });
+                            }
+
+                            RawBlock(pandoc_ast::Format("HTML".to_string()), Dom(dom).to_raw_html())
+
                         } else if kinds.contains(&"dcl".to_string()) {
                             interpret_dcl(code)
                         } else {
