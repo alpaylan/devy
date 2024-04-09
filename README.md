@@ -1,6 +1,6 @@
 # Devy: Interactive Blog Engine
 
-![Devy-Logo](devy-logo.png){ width=50% center }
+![Devy-Logo](devy-logo.png)
 
 There are many blogs on the internet, but the best ones I encounter are all interactive. They have code snippets that you can run, modify, and see the results right there. They have quizzes, exercises, and interactive diagrams. They are not just a wall of text, they are a playground where you can learn by doing.
 
@@ -12,7 +12,7 @@ Javascript code for the interactions and renders the article as a static HTML fi
 
 Below, you can see a Devy in action!
 
-![Devy-Example](devy-example.gif){ width=70% center }
+![Devy-Example](devy-example.gif)
 
 ## DCL
 
