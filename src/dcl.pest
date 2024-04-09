@@ -1,0 +1,18 @@
+
+
+
+id = { ASCII_ALPHANUMERIC+ }
+type = { "text-input" | "text-area" | "paragraph" }
+
+
+body = { ((!"\n") ~ ANY)+ }
+function = { params ~ "=>" ~ body }
+constant = { ((!"\n") ~ ANY)+ }
+params = { (id ~ ("," ~ id)*)? }
+value = _{ function | constant }
+
+stmt = { id ~ ":" ~ type ~ ":=" ~ value ~ "\n"? }
+
+WHITESPACE = _{ " " | "\t" }
+
+document = _{ SOI ~ stmt+ ~ EOI }

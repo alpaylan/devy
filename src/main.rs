@@ -1,255 +1,262 @@
+use std::path::Component;
+
 use pest::Parser;
 use pest_derive::Parser;
 
 #[derive(Parser)]
-#[grammar = "markdown.pest"]
-struct MarkDownParser;
+#[grammar = "dcl.pest"]
+struct DclParser;
 
-#[derive(Debug)]
-enum Markdown {
-    Heading(usize, String),
-    // List(Vec<Markdown>),
-    Paragraph(Paragraph), // Link(String, String),
-                          // Image(String, String),
-                          // CodeBlock(String),
-}
-
-type URL = String;
-
-#[derive(Debug)]
-enum RichText {
-    Normal(String),
-    Bold(Vec<RichText>),
-    Italic(Vec<RichText>),
-    Code(Vec<RichText>),
-    Image(Vec<RichText>, URL),
-    Link(Vec<RichText>, URL),
-}
-
-impl RichText {
-    pub fn to_html(&self) -> String {
-        match self {
-            RichText::Normal(text) => text.to_string(),
-            RichText::Bold(text) => format!(
-                "<b>{}</b>",
-                text.iter()
-                    .map(|rt| rt.to_html())
-                    .collect::<Vec<String>>()
-                    .join("")
-            ),
-            RichText::Italic(text) => format!(
-                "<i>{}</i>",
-                text.iter()
-                    .map(|rt| rt.to_html())
-                    .collect::<Vec<String>>()
-                    .join("")
-            ),
-            RichText::Code(text) => format!(
-                "<code>{}</code>",
-                text.iter()
-                    .map(|rt| rt.to_html())
-                    .collect::<Vec<String>>()
-                    .join("")
-            ),
-            RichText::Image(text, url) => format!(
-                "<img src=\"{}\" alt=\"{}\">",
-                url,
-                text.iter()
-                    .map(|rt| rt.to_text())
-                    .collect::<Vec<String>>()
-                    .join("")
-            ),
-            RichText::Link(text, url) => format!(
-                "<a href=\"{}\">{}</a>",
-                url,
-                text.iter()
-                    .map(|rt| rt.to_html())
-                    .collect::<Vec<String>>()
-                    .join("")
-            ),
-        }
-    }
-
-    fn to_text(&self) -> String {
-        match self {
-            RichText::Normal(text) => text.to_string(),
-            RichText::Bold(text) => text
-                .iter()
-                .map(|rt| rt.to_text())
-                .collect::<Vec<String>>()
-                .join(""),
-            RichText::Italic(text) => text
-                .iter()
-                .map(|rt| rt.to_text())
-                .collect::<Vec<String>>()
-                .join(""),
-            RichText::Code(text) => text
-                .iter()
-                .map(|rt| rt.to_text())
-                .collect::<Vec<String>>()
-                .join(""),
-            RichText::Image(text, _) => text
-                .iter()
-                .map(|rt| rt.to_text())
-                .collect::<Vec<String>>()
-                .join(""),
-            RichText::Link(text, _) => text
-                .iter()
-                .map(|rt| rt.to_text())
-                .collect::<Vec<String>>()
-                .join(""),
-        }
-    }
+fn raw_script(s: &str) -> pandoc_ast::Block {
+    pandoc_ast::Block::RawBlock(
+        pandoc_ast::Format("HTML".to_string()),
+        format!("<script>{}</script>", s),
+    )
 }
 
 #[derive(Debug)]
-struct Paragraph(Vec<RichText>);
-
-impl Paragraph {
-    pub fn to_html(&self) -> String {
-        self.0.iter().map(|rt| rt.to_html()).collect()
-    }
+pub struct DeclarativeComponentLanguage {
+    pub statements: Vec<Statement>,
 }
 
-struct MarkdownDocument(Vec<Markdown>);
+impl DeclarativeComponentLanguage {
+    pub fn to_dom(&self) -> Dom {
+        let mut dom = vec![];
 
-impl MarkDownParser {
-    fn parse_rich_text(pair: pest::iterators::Pair<Rule>) -> RichText {
-        match pair.as_rule() {
-            Rule::normal => RichText::Normal(pair.as_str().to_string()),
-            Rule::bold => {
-                let mut bold = vec![];
-                for inner in pair.into_inner() {
-                    bold.push(MarkDownParser::parse_rich_text(inner));
-                }
-                RichText::Bold(bold)
-            }
-            Rule::italic => {
-                let mut italic = vec![];
-                for inner in pair.into_inner() {
-                    italic.push(MarkDownParser::parse_rich_text(inner));
-                }
-                RichText::Italic(italic)
-            }
-            Rule::code => {
-                let mut code = vec![];
-                for inner in pair.into_inner() {
-                    code.push(MarkDownParser::parse_rich_text(inner));
-                }
-                RichText::Code(code)
-            }
-            Rule::link => {
-                let mut inner = pair.into_inner();
-                let text = MarkDownParser::parse_rich_text(inner.next().unwrap().into_inner().next().unwrap());
-                let url = inner.next().unwrap().as_str();
-                let url = url[1..url.len()-1].to_string();
-                RichText::Link(vec![text], url)
-            },
-            Rule::image => {
-                let mut inner = pair.into_inner();
-                let text = MarkDownParser::parse_rich_text(inner.next().unwrap().into_inner().next().unwrap());
-                let url = inner.next().unwrap().as_str();
-                let url = url[1..url.len()-1].to_string();
-                RichText::Image(vec![text], url)
-            },
-            other => {
-                panic!("Unexpected rule: {:?}", other);
-            }
-        }
-    }
-}
-impl Markdown {
-    pub fn from_str(s: &str) -> MarkdownDocument {
-        let pairs = MarkDownParser::parse(Rule::document, s).unwrap_or_else(|e| panic!("{}", e));
-
-        println!("Length: {}", s.len());
-        let mut markdown = vec![];
-        for pair in pairs {
-            println!("{:?}", pair);
-            match pair.as_rule() {
-                Rule::heading => {
-                    let mut inner = pair.into_inner();
-                    let level = inner.next().unwrap().as_str().len();
-                    let text = inner.next().unwrap().as_str().to_string();
-                    markdown.push(Markdown::Heading(level, text));
-                }
-                Rule::paragraph => {
-                    let mut paragraph: Vec<RichText> = vec![];
-                    for inner in pair.into_inner() {
-                        paragraph.push(MarkDownParser::parse_rich_text(inner));
+        for statement in &self.statements {
+            match &statement.value {
+                Value::Const { value } => dom.push(DomElement::Element {
+                    tag: statement.component_kind.tag(),
+                    attributes: [
+                        statement.component_kind.attributes(),
+                        vec![
+                            ("id".to_string(), statement.variable.clone()),
+                            ("value".to_string(), value.clone()),
+                        ],
+                    ]
+                    .concat(),
+                    children: Dom(vec![]),
+                }),
+                Value::Fn { variables, body } => {
+                    // Create event listeners for each variable, and update the value of the input
+                    let mut body_with_query_selectors = body.clone();
+                    for variable in variables {
+                        body_with_query_selectors = body_with_query_selectors.replace(
+                            variable,
+                            &format!("document.getElementById(\"{}\").value", variable),
+                        );
                     }
-                    markdown.push(Markdown::Paragraph(Paragraph(paragraph)));
+
+                    for variable in variables {
+                        let event_listener = format!(
+                            r#"
+    document.getElementById("{}").addEventListener('input', function(event) {{
+    document.getElementById("{}").{} = {}
+}});
+"#,
+                            variable,
+                            statement.variable,
+                            statement.component_kind.accessor(),
+                            body_with_query_selectors
+                        );
+                        dom.push(DomElement::Element {
+                            tag: "script".to_string(),
+                            attributes: vec![],
+                            children: Dom(vec![DomElement::Text(event_listener)]),
+                        });
+                    }
+
+                    dom.push(DomElement::Element {
+                        tag: statement.component_kind.tag(),
+                        attributes: [
+                            statement.component_kind.attributes(),
+                            vec![("id".to_string(), statement.variable.clone())],
+                        ]
+                        .concat(),
+                        children: Dom(vec![]),
+                    });
                 }
-                Rule::empty_line => {}
-                Rule::EOI => {}
-                
-                other => {
-                    panic!("Unexpected rule: {:?}", other);
-                }
-            }
+            };
         }
 
-        MarkdownDocument(markdown)
+        Dom(dom)
+    }
+}
+
+#[derive(Debug)]
+pub struct Statement {
+    pub variable: String,
+    pub component_kind: ComponentKind,
+    pub value: Value,
+}
+
+#[derive(Debug)]
+pub enum ComponentKind {
+    TextInput,
+    TextArea,
+    Paragraph,
+}
+
+impl ComponentKind {
+    pub fn attributes(&self) -> Vec<(String, String)> {
+        match self {
+            ComponentKind::TextInput => vec![("type".to_string(), "text".to_string())],
+            ComponentKind::TextArea | ComponentKind::Paragraph => vec![],
+        }
     }
 
-    pub fn to_html(&self) -> String {
+    pub fn accessor(&self) -> String {
         match self {
-            Markdown::Heading(level, text) => format!("<h{}>{}</h{}>\n", level, text, level),
-            Markdown::Paragraph(text) => format!("<p>{}</p>\n", text.to_html()),
+            ComponentKind::TextInput | ComponentKind::TextArea => "value".to_string(),
+            ComponentKind::Paragraph => "innerHTML".to_string(),
+        }
+    }
+
+    pub fn tag(&self) -> String {
+        match self {
+            ComponentKind::TextInput => "input".to_string(),
+            ComponentKind::TextArea => "textarea".to_string(),
+            ComponentKind::Paragraph => "p".to_string(),
         }
     }
 }
 
-impl MarkdownDocument {
-    pub fn to_html(&self) -> String {
-        self.0.iter().map(|md| md.to_html()).collect()
+#[derive(Debug)]
+pub struct Dom(pub Vec<DomElement>);
+
+impl Dom {
+    pub fn to_raw_html(&self) -> String {
+        let mut html = String::new();
+        for element in &self.0 {
+            match element {
+                DomElement::Text(text) => html.push_str(text),
+                DomElement::Element {
+                    tag,
+                    attributes,
+                    children,
+                } => {
+                    html.push_str(&format!("<{}", tag));
+                    for (key, value) in attributes {
+                        html.push_str(&format!(" {}=\"{}\" ", key, value));
+                    }
+                    html.push_str(">");
+                    html.push_str(&children.to_raw_html());
+                    html.push_str(&format!("</{}>\n", tag));
+                }
+            }
+        }
+        html
     }
+}
+
+#[derive(Debug)]
+pub enum DomElement {
+    Text(String),
+    Element {
+        tag: String,
+        attributes: Vec<(String, String)>,
+        children: Dom,
+    },
+}
+
+#[derive(Debug)]
+pub enum Value {
+    Fn {
+        variables: Vec<String>,
+        body: String,
+    },
+    Const {
+        value: String,
+    },
+}
+
+fn parse_dcl(s: &str) -> DeclarativeComponentLanguage {
+    let pairs = DclParser::parse(Rule::document, s).unwrap_or_else(|e| panic!("{}", e));
+
+    let mut statements = vec![];
+
+    for pair in pairs {
+        let statement = match pair.as_rule() {
+            Rule::stmt => {
+                let mut pairs = pair.into_inner();
+                let variable = pairs.next().unwrap().as_str().trim().to_string();
+                let component_kind = match pairs.next().unwrap().as_str() {
+                    "text-input" => ComponentKind::TextInput,
+                    "text-area" => ComponentKind::TextArea,
+                    "paragraph" => ComponentKind::Paragraph,
+                    _ => panic!(),
+                };
+                let pair = pairs.next().unwrap();
+                let value = match pair.as_rule() {
+                    Rule::constant => {
+                        let value = pair.as_str().to_string();
+                        Value::Const { value }
+                    }
+                    Rule::function => {
+                        println!("{:?}", pair);
+                        let mut pairs = pair.into_inner();
+                        println!("{:?}", pairs);
+                        let params = pairs.next().unwrap();
+                        let variables = params
+                            .as_str()
+                            .split(',')
+                            .map(|s| s.trim().to_string())
+                            .collect();
+                        let body = pairs.next().unwrap().as_str().to_string();
+                        Value::Fn { variables, body }
+                    }
+                    other => panic!("{:?}", other),
+                };
+                Statement {
+                    variable,
+                    component_kind,
+                    value,
+                }
+            }
+            Rule::EOI => continue,
+            other => panic!("{:?}", other),
+        };
+        statements.push(statement);
+    }
+
+    DeclarativeComponentLanguage { statements }
+}
+
+fn interpret_dcl(s: &str) -> pandoc_ast::Block {
+    let dcl = parse_dcl(s);
+    let dom = dcl.to_dom();
+    let html = dom.to_raw_html();
+    pandoc_ast::Block::RawBlock(pandoc_ast::Format("HTML".to_string()), html)
 }
 
 fn main() {
-    let md = r#"
-# This is a heading 1
+    let mut pandoc = pandoc::new();
 
-This is a paragraph.
+    pandoc.add_filter(|json| {
+        pandoc_ast::filter(json, |mut pandoc| {
+            for block in &mut pandoc.blocks {
+                use pandoc_ast::Block::*;
+                *block = match block {
+                    CodeBlock((ref identifiers, ref kinds, ref kvs), ref code) => {
+                        if kinds.contains(&"script".to_string()) {
+                            raw_script(code)
+                        } else if kinds.contains(&"dcl".to_string()) {
+                            interpret_dcl(code)
+                        } else {
+                            block.clone()
+                        }
+                    }
+                    _ => block.clone(),
+                }
+            }
+            pandoc
+        })
+    });
 
-This is another paragraph.
+    pandoc.set_input(pandoc::InputKind::Files(vec!["huffman.md"
+        .to_string()
+        .into()]));
 
-# This is another heading 1
-
-## This is a heading 2
-
-This is a paragraph.
-Still a paragraph.
-Still.
-
-Not anymore.
-
-### This is a heading 3
-
-This is a line.  
-This is a paragraph.
-
-This is a **bold** paragraph.
-
-This is a **bold and *italic* ** paragraph.
-
-This is a ***bitalic*** paragraph.
-
-This paragraph has some `code`.
-
-This is a [link](https://example.com).
-
-This is an ![image](https://example.com/image.jpg).
-
-This is a [**bold link**](https://example.com).
-
-
-"#;
-
-    let doc = Markdown::from_str(md);
-    println!("{}", doc.to_html());
-
-    let link = "[link]";
-    let pairs = MarkDownParser::parse(Rule::link_text, link).unwrap_or_else(|e| panic!("{}", e));
-
+    pandoc.set_output(pandoc::OutputKind::File("huffman.html".into()));
+    pandoc.execute().unwrap();
 }
