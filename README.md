@@ -80,6 +80,7 @@ in my articles. If you want to be involved, just open an issue or a PR!
 - [ ] Button
 - [ ] Switch
 - [x] Copy Button for Code Blocks
+- [x] Line numbers for Code Blocks
 - [ ] Code Running/Echo for Code Blocks(Javascript)
 - [ ] Code Running/Echo for Code Blocks(Other languages)
 - [ ] Custom Components(Allows reusability of CDL blocks)
