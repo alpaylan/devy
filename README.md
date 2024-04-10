@@ -16,7 +16,7 @@ Below, you can see a Devy in action!
 
 ## DCL
 
-DCL is pretty small for now, the only components are `text-input`, `text-area`, and `paragraph`. Each component has a name, type, and value, where the value can be a constant or a function of the values of other components. The components can be connected, so that when a component changes, the connected components are updated as well.
+DCL is pretty small for now, the only components are `text-input`, `text-area`, `paragraph`, and `radio`. Each component has a name, type, and value, where the value can be a constant or a function of the values of other components. The components can be connected, so that when a component changes, the connected components are updated as well.
 
 Below, you can see a simple example of run-length encoding used in Devy. The first code block is marked as a `script`, meaning that it will be executed in the browser within a `<script>` tag, `show` means that the code will be displayed in the HTML as a code block. The second code block is marked as `dcl`, meaning that it will be parsed by Devy and rendered as a component.
 
@@ -68,3 +68,20 @@ The result of the `dcl` block is as follows:
 
 I plan to add more components and features to DCL in the future, such as quizzes, diagrams, and more. The project is all need-based for now, I'll add features as I need them.
 in my articles. If you want to be involved, just open an issue or a PR!
+
+## Features
+
+- [x] Text Input
+- [x] Text Area
+- [x] Paragraph
+- [x] Radio
+- [ ] Checkbox
+- [ ] Range
+- [ ] Button
+- [ ] Switch
+- [x] Copy Button for Code Blocks
+- [ ] Code Running/Echo for Code Blocks(Javascript)
+- [ ] Code Running/Echo for Code Blocks(Other languages)
+- [ ] Custom Components(Allows reusability of CDL blocks)
+- [ ] Custom Styling
+- [ ] Class Names for Components
