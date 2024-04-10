@@ -309,8 +309,20 @@ fn main() {
                 use pandoc_ast::Block::*;
                 *block = match block {
                     CodeBlock((ref identifier, ref kinds, ref kvs), ref code) => {
+                        let mut dom = vec![];
+                        // Create a hidden input variable to store the code as its value
+                        dom.push(DomElement::Element {
+                            tag: "input".to_string(),
+                            attributes: vec![
+                                ("type".to_string(), "hidden".to_string()),
+                                ("id".to_string(), identifier.clone()),
+                                ("value".to_string(), code.clone()),
+                            ],
+                            children: Dom(vec![]),
+                        });
+
                         if kinds.contains(&"script".to_string()) {
-                            let mut dom = vec![];
+                            
                             dom.push(DomElement::Element {
                                 tag: "script".to_string(),
                                 attributes: vec![],
@@ -318,6 +330,15 @@ fn main() {
                             });
 
                             if kinds.contains(&"show".to_string()) {
+
+                                if kinds.contains(&"copy".to_string()) {
+                                    dom.push(DomElement::Element {
+                                        tag: "button".to_string(),
+                                        attributes: vec![("onclick".to_string(), format!("navigator.clipboard.writeText(document.getElementById('{}').value);", identifier.clone()))],
+                                        children: Dom(vec![DomElement::Text("Copy".to_string())]),
+                                    });
+                                }
+
                                 let lang = (
                                     "class".to_string(),
                                     format!("language-{}", kinds.first().unwrap().clone()),
