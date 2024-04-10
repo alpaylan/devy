@@ -185,7 +185,7 @@ impl ComponentKind {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Dom(pub Vec<DomElement>);
 
 impl Dom {
@@ -213,7 +213,7 @@ impl Dom {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum DomElement {
     Text(String),
     Element {
@@ -221,6 +221,49 @@ pub enum DomElement {
         attributes: Vec<(String, String)>,
         children: Dom,
     },
+}
+
+impl DomElement {
+    pub fn with_attr(&self, key: &str, value: &str) -> Self {
+        match self {
+            DomElement::Text(text) => DomElement::Text(text.clone()),
+            DomElement::Element {
+                tag,
+                attributes,
+                children,
+            } =>{
+                let mut attributes = attributes.clone();
+                if let Some((_, v)) = attributes.iter().find(|(k, _)| k == key) {
+                    attributes = attributes
+                        .iter()
+                        .map(|(k, v)| {
+                            if k == key {
+                                (k.clone(), value.to_string())
+                            } else {
+                                (k.clone(), v.clone())
+                            }
+                        })
+                        .collect();
+                } else {
+                    attributes.push((key.to_string(), value.to_string()));
+                }
+                
+                DomElement::Element {
+                tag: tag.clone(),
+                attributes: attributes
+                    .iter()
+                    .map(|(k, v)| {
+                        if k == key {
+                            (k.clone(), value.to_string())
+                        } else {
+                            (k.clone(), v.clone())
+                        }
+                    })
+                    .collect(),
+                children: children.clone(),
+            }},
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -316,7 +359,7 @@ fn main() {
                             attributes: vec![
                                 ("type".to_string(), "hidden".to_string()),
                                 ("id".to_string(), identifier.clone()),
-                                ("value".to_string(), code.clone()),
+                                ("value".to_string(), code.replace("\"", "&quot;")),
                             ],
                             children: Dom(vec![]),
                         });
@@ -364,18 +407,18 @@ fn main() {
                                         .join("\n");
                                     let numbers = DomElement::Element {
                                         tag: "pre".to_string(),
-                                        attributes: vec![("style".to_string(), "float: left".to_string())],
+                                        attributes: vec![],
                                         children: Dom(vec![DomElement::Element {
                                             tag: "code".to_string(),
-                                            attributes: vec![("class".to_string(), "language-none".to_string())],
+                                            attributes: vec![],
                                             children: Dom(vec![DomElement::Text(numbers)]),
                                         }]),
                                     };
 
                                     let codeblock = DomElement::Element {
                                         tag: "div".to_string(),
-                                        attributes: vec![("class".to_string(), "codeblock".to_string())],
-                                        children: Dom(vec![numbers, pre]),
+                                        attributes: vec![("style".to_string(), "display: flex; flex-direction: row;".to_string())],
+                                        children: Dom(vec![numbers, pre.with_attr("style", "flex:1")]),
                                     };
 
                                     dom.push(codeblock);
