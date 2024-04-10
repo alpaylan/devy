@@ -205,7 +205,7 @@ impl Dom {
                     }
                     html.push_str(">");
                     html.push_str(&children.to_raw_html());
-                    html.push_str(&format!("</{}>\n", tag));
+                    html.push_str(&format!("</{}>", tag));
                 }
             }
         }
@@ -323,7 +323,7 @@ fn main() {
                                     format!("language-{}", kinds.first().unwrap().clone()),
                                 );
                                 let name = ("name".to_string(), identifier.clone());
-                                let code = code.replace("<", "&lt;").replace(">", "&gt;");
+                                let code = code.trim().replace("<", "&lt;").replace(">", "&gt;");
                                 dom.push(DomElement::Element {
                                     tag: "pre".to_string(),
                                     attributes: vec![],
