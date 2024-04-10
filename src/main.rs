@@ -345,15 +345,44 @@ fn main() {
                                 );
                                 let name = ("name".to_string(), identifier.clone());
                                 let code = code.trim().replace("<", "&lt;").replace(">", "&gt;");
-                                dom.push(DomElement::Element {
+                                let pre = DomElement::Element {
                                     tag: "pre".to_string(),
                                     attributes: vec![],
                                     children: Dom(vec![DomElement::Element {
                                         tag: "code".to_string(),
                                         attributes: vec![lang, name],
-                                        children: Dom(vec![DomElement::Text(code)]),
+                                        children: Dom(vec![DomElement::Text(code.clone())]),
                                     }]),
-                                });
+                                };
+
+                                if kinds.contains(&"linenumbers".to_string()) {
+                                    let number_of_lines = code.lines().count();
+                                    // Create a vertical list of numbers
+                                    let numbers = (1..=number_of_lines)
+                                        .map(|n| format!("<span>{}</span>", n))
+                                        .collect::<Vec<String>>()
+                                        .join("\n");
+                                    let numbers = DomElement::Element {
+                                        tag: "pre".to_string(),
+                                        attributes: vec![("style".to_string(), "float: left".to_string())],
+                                        children: Dom(vec![DomElement::Element {
+                                            tag: "code".to_string(),
+                                            attributes: vec![("class".to_string(), "language-none".to_string())],
+                                            children: Dom(vec![DomElement::Text(numbers)]),
+                                        }]),
+                                    };
+
+                                    let codeblock = DomElement::Element {
+                                        tag: "div".to_string(),
+                                        attributes: vec![("class".to_string(), "codeblock".to_string())],
+                                        children: Dom(vec![numbers, pre]),
+                                    };
+
+                                    dom.push(codeblock);
+                                } else {
+                                    dom.push(pre);
+                                }
+                                
                             }
 
                             RawBlock(
