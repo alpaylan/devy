@@ -1,5 +1,7 @@
 use std::path::Component;
 
+use pandoc::Pandoc;
+
 use pest::Parser;
 use pest_derive::Parser;
 
@@ -343,9 +345,9 @@ fn interpret_dcl(s: &str) -> pandoc_ast::Block {
     pandoc_ast::Block::RawBlock(pandoc_ast::Format("HTML".to_string()), html)
 }
 
-fn main() {
-    let mut pandoc = pandoc::new();
 
+
+pub fn code_block_filter(pandoc: &mut Pandoc) {
     pandoc.add_filter(|json| {
         pandoc_ast::filter(json, |mut pandoc| {
             for block in &mut pandoc.blocks {
@@ -444,6 +446,31 @@ fn main() {
             pandoc
         })
     });
+}
+
+fn utf8_meta_filter(pandoc: &mut Pandoc) {
+    pandoc.add_filter(|json| {
+        pandoc_ast::filter(json, |mut pandoc| {
+            let meta_block = DomElement::Element {
+                tag: "meta".to_string(),
+                attributes: vec![
+                    ("charset".to_string(), "UTF-8".to_string()),
+                ],
+                children: Dom(vec![]),
+            };
+
+            pandoc.blocks.insert(0, pandoc_ast::Block::RawBlock(pandoc_ast::Format("HTML".to_string()), Dom(vec![meta_block]).to_raw_html()));
+
+            pandoc
+        })
+    });
+}
+
+fn main() {
+    let mut pandoc = pandoc::new();
+
+    code_block_filter(&mut pandoc);    
+    utf8_meta_filter(&mut pandoc);
 
     pandoc.set_input(pandoc::InputKind::Files(vec!["huffman.md"
         .to_string()
