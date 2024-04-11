@@ -244,9 +244,7 @@ pub fn parse_dcl(s: &str) -> DeclarativeComponentLanguage {
     DeclarativeComponentLanguage { statements }
 }
 
-pub fn interpret_dcl(s: &str) -> pandoc_ast::Block {
+pub fn interpret_dcl(s: &str) -> Dom {
     let dcl = parse_dcl(s);
-    let dom = dcl.to_dom();
-    let html = dom.to_raw_html();
-    pandoc_ast::Block::RawBlock(pandoc_ast::Format("HTML".to_string()), html)
+    dcl.to_dom()
 }
