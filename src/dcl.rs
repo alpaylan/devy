@@ -12,7 +12,6 @@ pub struct DeclarativeComponentLanguage {
     pub statements: Vec<Statement>,
 }
 
-
 #[derive(Debug)]
 pub struct Statement {
     pub variable: String,
@@ -28,7 +27,6 @@ pub enum ComponentKind {
     Radio,
 }
 
-
 #[derive(Debug)]
 pub enum Value {
     Fn {
@@ -42,7 +40,6 @@ pub enum Value {
         values: Vec<String>,
     },
 }
-
 
 impl DeclarativeComponentLanguage {
     pub fn to_dom(&self) -> Dom {
@@ -84,11 +81,7 @@ impl DeclarativeComponentLanguage {
                             statement.component_kind.accessor(),
                             body_with_query_selectors
                         );
-                        dom.push(DomElement::Element {
-                            tag: "script".to_string(),
-                            attributes: vec![],
-                            children: Dom(vec![DomElement::Text(event_listener)]),
-                        });
+                        dom.push(DomElement::script(&event_listener));
                     }
 
                     dom.push(DomElement::Element {
@@ -107,7 +100,7 @@ impl DeclarativeComponentLanguage {
                         tag: "input".to_string(),
                         attributes: vec![
                             ("type".to_string(), "hidden".to_string()),
-                            ("id".to_string(), format!("{}", statement.variable)),
+                            ("id".to_string(), statement.variable.to_string()),
                         ],
                         children: Dom(vec![]),
                     });
@@ -121,7 +114,7 @@ impl DeclarativeComponentLanguage {
     document.getElementById("{}").dispatchEvent(new Event('input'));
 }});
 "#,
-                            format!("{}_{}", statement.variable, value),
+                            format_args!("{}_{}", statement.variable, value),
                             statement.variable,
                             value,
                             statement.variable,
@@ -195,7 +188,6 @@ impl ComponentKind {
     }
 }
 
-
 pub fn parse_dcl(s: &str) -> DeclarativeComponentLanguage {
     let pairs = DclParser::parse(Rule::document, s).unwrap_or_else(|e| panic!("{}", e));
 
@@ -258,4 +250,3 @@ pub fn interpret_dcl(s: &str) -> pandoc_ast::Block {
     let html = dom.to_raw_html();
     pandoc_ast::Block::RawBlock(pandoc_ast::Format("HTML".to_string()), html)
 }
-
