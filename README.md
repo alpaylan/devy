@@ -71,6 +71,8 @@ in my articles. If you want to be involved, just open an issue or a PR!
 
 ## Features
 
+### Declarative Component Language(DCL) Features
+
 - [x] Text Input
 - [x] Text Area
 - [x] Paragraph
@@ -79,10 +81,23 @@ in my articles. If you want to be involved, just open an issue or a PR!
 - [ ] Range
 - [ ] Button
 - [ ] Switch
+- [ ] Custom Styling
+- [ ] Custom Components(Allows reusability of CDL blocks)
+- [ ] Class Names for Components
+
+### Code Block Features
+
 - [x] Copy Button for Code Blocks
 - [x] Line numbers for Code Blocks
+    - [ ] Line numbers with offsets
 - [ ] Code Running/Echo for Code Blocks(Javascript)
 - [ ] Code Running/Echo for Code Blocks(Other languages)
-- [ ] Custom Components(Allows reusability of CDL blocks)
-- [ ] Custom Styling
-- [ ] Class Names for Components
+- [ ] File names in Code Blocks
+
+### Article Features
+
+- [x] Mermaid
+    - [x] Extended Mermaid with Animations
+    - [ ] Custom Styling
+- [ ] D2
+- [ ] Inline JSX Support
