@@ -14,6 +14,8 @@ Below, you can see a Devy in action!
 
 ![Devy-Example](devy-example.gif)
 
+Also, there is an [introduction to devy using devy](https://www.alperenkeles.com/blog/devy) article on my blog, if you're interesting in seeing Devy in action!
+
 ## DCL
 
 DCL is pretty small for now, the only components are `text-input`, `text-area`, `paragraph`, and `radio`. Each component has a name, type, and value, where the value can be a constant or a function of the values of other components. The components can be connected, so that when a component changes, the connected components are updated as well.
