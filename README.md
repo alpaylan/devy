@@ -84,12 +84,14 @@ in my articles. If you want to be involved, just open an issue or a PR!
 - [ ] Custom Styling
 - [ ] Custom Components(Allows reusability of CDL blocks)
 - [ ] Class Names for Components
+- [ ] Javascript Aware Syntax Transformation
 
 ### Code Block Features
 
 - [x] Copy Button for Code Blocks
 - [x] Line numbers for Code Blocks
     - [ ] Line numbers with offsets
+    - [x] Line numbers for non-js code blocks
 - [ ] Code Running/Echo for Code Blocks(Javascript)
 - [ ] Code Running/Echo for Code Blocks(Other languages)
 - [ ] File names in Code Blocks
@@ -97,7 +99,8 @@ in my articles. If you want to be involved, just open an issue or a PR!
 ### Article Features
 
 - [x] Mermaid
-    - [x] Extended Mermaid with Animations
+    - [x] Mermaid with Default Animations
+    - [ ] Extended Mermaid with Animations
     - [ ] Custom Styling
 - [ ] D2
 - [ ] Inline JSX Support

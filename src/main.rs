@@ -1,3 +1,5 @@
+
+
 use pandoc::Pandoc;
 
 mod dcl;
@@ -39,13 +41,18 @@ pub fn code_block_filter(pandoc: &mut Pandoc) {
                             children: Dom(vec![]),
                         });
 
-                        let language = kinds.first().unwrap();
+                        let language = if let Some(s) = kinds.first() {
+                            s
+                        } else {
+                            ""
+                        };
+
 
                         if kinds.contains(&"copy".to_string()) {
                             dom.push(copy_button(identifier));
                         }
 
-                        match language.as_str() {
+                        match language {
                             "dcl" => {
                                 let mut dcl = interpret_dcl(code);
                                 dom.append(&mut dcl.0);
@@ -59,9 +66,11 @@ pub fn code_block_filter(pandoc: &mut Pandoc) {
                                 // <script src="https://cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js"></script>
 
                                 let frame_rate = if let Some((_, value)) = kvs.iter().find(|(k, _)| k == "rate") {
-                                    value.parse::<f64>().unwrap()
+                                    Some(value.parse::<f64>().unwrap())
+                                } else if kinds.contains(&"animate".to_string()) {
+                                    Some(1000.0)
                                 } else {
-                                    1000.0
+                                    None
                                 };
 
                                 dom.push(DomElement::Element {
@@ -86,6 +95,7 @@ pub fn code_block_filter(pandoc: &mut Pandoc) {
                                 //     }, 1000);
                                 // </script>
 
+                                if let Some(frame_rate) = frame_rate {
                                 dom.push(DomElement::Element {
                                     tag: "script".to_string(),
                                     attributes: vec![],
@@ -108,7 +118,23 @@ pub fn code_block_filter(pandoc: &mut Pandoc) {
                                         identifier, frame_rate, identifier, identifier, frame_rate
                                     ))]),
                                 });
-                                
+                                } else {
+                                    dom.push(DomElement::Element {
+                                        tag: "script".to_string(),
+                                        attributes: vec![],
+                                        children: Dom(vec![DomElement::Text(format!(
+                                            r#"
+                                            setTimeout(() => {{
+                                            mermaid.render(
+                                                "{}-renderer",
+                                                document.getElementById("{}").value,
+                                                (code) => {{document.getElementById("{}-rendered").innerHTML = code}}
+                                            ), 100}});
+                                            "#,
+                                            identifier, identifier, identifier
+                                        ))]),
+                                    });
+                                }
 
                                 // <div id="diagram-rendered"></div>
 
@@ -124,17 +150,18 @@ pub fn code_block_filter(pandoc: &mut Pandoc) {
                                 RawBlock(pandoc_ast::Format("HTML".to_string()), Dom(dom).to_raw_html())
                             }
                             _ => {
-                                if kinds.contains(&"script".to_string()) {
+                                if kinds.contains(&"script".to_string()) && ["js", "javascript"].contains(&language) {
                                     dom.push(DomElement::Element {
                                         tag: "script".to_string(),
                                         attributes: vec![],
                                         children: Dom(vec![DomElement::Text(code.clone())]),
                                     });
+                                };
 
-                                    if kinds.contains(&"show".to_string()) {
+                                    if !kinds.contains(&"script".to_string()) ||  kinds.contains(&"show".to_string()) {
                                         let lang = (
                                             "class".to_string(),
-                                            format!("language-{}", kinds.first().unwrap().clone()),
+                                            format!("language-{}", language),
                                         );
                                         let name = ("name".to_string(), identifier.clone());
                                         let code =
@@ -158,7 +185,7 @@ pub fn code_block_filter(pandoc: &mut Pandoc) {
                                                 .join("\n");
                                             let numbers = DomElement::Element {
                                                 tag: "pre".to_string(),
-                                                attributes: vec![],
+                                                attributes: vec![("class".to_string(), "line-numbers".to_string())],
                                                 children: Dom(vec![DomElement::Element {
                                                     tag: "code".to_string(),
                                                     attributes: vec![],
@@ -189,10 +216,7 @@ pub fn code_block_filter(pandoc: &mut Pandoc) {
                                         pandoc_ast::Format("HTML".to_string()),
                                         Dom(dom).to_raw_html(),
                                     )
-                                } else {
-                                    block.clone()
                                 }
-                            }
                         }
                     }
                     _ => block.clone(),
@@ -231,10 +255,10 @@ fn main() {
     code_block_filter(&mut pandoc);
     utf8_meta_filter(&mut pandoc);
 
-    pandoc.set_input(pandoc::InputKind::Files(vec!["huffman.md"
+    pandoc.set_input(pandoc::InputKind::Files(vec!["devy.md"
         .to_string()
         .into()]));
 
-    pandoc.set_output(pandoc::OutputKind::File("huffman1.html".into()));
+    pandoc.set_output(pandoc::OutputKind::File("devy.html".into()));
     pandoc.execute().unwrap();
 }

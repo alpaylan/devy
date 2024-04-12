@@ -41,6 +41,20 @@ pub enum Value {
     },
 }
 
+fn swap_variables_in_js(s: &str, vars: &Vec<String>) -> String {
+    let change = "document.getElementById(\"{}\").value";
+    let mut s = s.to_string();
+
+    for var in vars {
+        if change.contains(var) {
+            panic!("Variable {} is already in the change string, that would cause ambiguity", var);
+        }
+        s = s.replace(var, &format!("document.getElementById(\"{}\").value", var));
+    }
+
+    s
+}
+
 impl DeclarativeComponentLanguage {
     pub fn to_dom(&self) -> Dom {
         let mut dom = vec![];
@@ -61,13 +75,7 @@ impl DeclarativeComponentLanguage {
                 }),
                 Value::Fn { variables, body } => {
                     // Create event listeners for each variable, and update the value of the input
-                    let mut body_with_query_selectors = body.clone();
-                    for variable in variables {
-                        body_with_query_selectors = body_with_query_selectors.replace(
-                            variable,
-                            &format!("document.getElementById(\"{}\").value", variable),
-                        );
-                    }
+                    let body_with_query_selectors = swap_variables_in_js(body, variables);
 
                     for variable in variables {
                         let event_listener = format!(
